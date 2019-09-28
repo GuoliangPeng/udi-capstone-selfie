@@ -42,10 +42,19 @@ class WaypointUpdater(object):
 
     def pose_cb(self, msg):
         # TODO: Implement
+        
+        print("pose_cb got called")
+        print(msg)
+        
         pass
 
     def waypoints_cb(self, waypoints):
         # TODO: Implement
+        
+        print("waypoints_cb got called")
+        print("waypoints type: ",type(waypoints))
+        print("waypoints len: ",len(waypoints))
+        
         pass
 
     def traffic_cb(self, msg):
