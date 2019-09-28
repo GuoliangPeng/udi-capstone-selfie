@@ -26,42 +26,60 @@ LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this n
 
 class WaypointUpdater(object):
     def __init__(self):
+        
+        #rospy.init_node('waypoint_updater',log_level=rospy.DEBUG)
         rospy.init_node('waypoint_updater')
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-
+        
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
         # TODO: Add other member variables you need below
-
+        
+        self.waypoints = None
         rospy.spin()
 
     def pose_cb(self, msg):
         # TODO: Implement
         
-        print("pose_cb got called")
-        print(msg)
+        rospy.loginfo(" ------------------------ pose_cb got called")
+        rospy.logerr(" ------------------------ pose_cb got called")
         
         pass
 
     def waypoints_cb(self, waypoints):
         # TODO: Implement
+#         rospy.logdebug(msg, *args)
+#         rospy.logwarn(msg, *args)
+#         rospy.loginfo(msg, *args)
+#         rospy.logerr(msg, *args)
+#         rospy.logfatal(msg, *args)
+
+        rospy.loginfo("---------------------------waypoints_cb got called")
+        rospy.logerr("---------------------------waypoints_cb got called")
         
-        print("waypoints_cb got called")
-        print("waypoints type: ",type(waypoints))
-        print("waypoints len: ",len(waypoints))
         
+        size = len(waypoints.waypoints)
+        
+        rospy.logerr("---------------------------waypoints size %s",size)
+     
+        # make a copy as they are only sent once
+        self.waypoints = waypoints
+            
         pass
 
     def traffic_cb(self, msg):
+        rospy.logerr("---------------------------traffic_cb got called")
         # TODO: Callback for /traffic_waypoint message. Implement
         pass
 
     def obstacle_cb(self, msg):
+        
+        rospy.logerr("---------------------------obstacle_cb got called")
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
         pass
 
