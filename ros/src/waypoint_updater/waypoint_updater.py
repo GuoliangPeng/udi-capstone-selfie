@@ -4,7 +4,7 @@ import rospy
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
 from scipy import spatial
-
+import numpy as np
 import math
 
 '''
@@ -45,22 +45,20 @@ class WaypointUpdater(object):
         self.waypoints_2d   = None
         self.waypoint_tree  = None
         self.pose           = None
-        
-        #rospy.spin()
+
         self.loop()
     
     def loop(self):
+        
         rate = rospy.Rate(50)
         while not rospy.is_shutdown():
-            if self.pose and self.base_waypoints:
+            if self.pose and self.base_waypoints and self.waypoint_tree:
                 closest_waypoint_idx = self.get_closest_waypoint_idx()
                 self.publish_waypoints(closest_waypoint_idx)
             rate.sleep()    
 
     def get_closest_waypoint_idx(self):
-        
-        rospy.logerr("get_closest_waypoint_idx: enter")
-        
+
         x = self.pose.pose.position.x
         y = self.pose.pose.position.y
         
@@ -84,64 +82,44 @@ class WaypointUpdater(object):
         if val > 0:
             closest_idx = (closest_idx + 1) % len(self.waypoints_2d)
         
-        rospy.logerr("closest_idx %s: ",str(closest_idx))
-        
-        rospy.logerr("get_closest_waypoint_idx: done")
-        
         return closest_idx
     
     def publish_waypoints(self, closest_idx):
         
-        rospy.logerr("publish_waypoints: enter")
-        rospy.logerr("closest idx: %s", str(closest_idx))
+        rospy.logerr("--- closest: %s: ",closest_idx)
         
         lane = Lane()
         lane.header = self.base_waypoints.header
         
-
         if self.base_waypoints.waypoints == None:
             rospy.logerr("error: self.base_waypoints.waypoints== none!")
+            return
         else:
-            rospy.logerr("getting size...")
-            size2 = len(self.base_waypoints.waypoints)
-            rospy.logerr("self.base_waypoints.waypoints size: %s",str(size2))
             self.base_waypoints.waypoints
         
         lane.waypoints = self.base_waypoints.waypoints[closest_idx:closest_idx+LOOKAHEAD_WPS]
         self.final_waypoints_pub.publish(lane)
         
- 
-        rospy.logerr("publish_waypoints: done")
-        
-        
     def pose_cb(self, msg):
         
-        rospy.logerr("pose_cb: enter")
+        rospy.loginfo("pose_cb: enter")
         self.pose = msg
-        rospy.logerr("pose_cb: done")
+        rospy.loginfo("pose_cb: done")
 
     def waypoints_cb(self, waypoints):
-        
-        rospy.logerr("waypoints_cb: enter")
-        
+            
         size = len(waypoints.waypoints)
-        
-        rospy.logerr("waypoints size %s",size)
      
         # make a copy as they are only sent once
         self.base_waypoints = waypoints
         
         #use scipi KDTree to get closes waypoint
         if not self.waypoints_2d:
-             rospy.logerr("waypoints_cb: assigning 2d points")
              self.waypoints_2d = [[waypoint.pose.pose.position.x,waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
-             rospy.logerr("waypoints_cb: assigning kdtree")
              self.waypoint_tree = spatial.KDTree(self.waypoints_2d)   
         else:
             rospy.logerr("self.waypoints_2d already assigned?: %s",self.waypoints_2d)
         
-        rospy.logerr("waypoints_cb: done")
-
     def traffic_cb(self, msg):
         rospy.logerr("---------------------------traffic_cb got called")
         # TODO: Callback for /traffic_waypoint message. Implement
