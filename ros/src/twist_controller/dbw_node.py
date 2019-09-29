@@ -130,7 +130,6 @@ class DBWNode(object):
         self.current_vel = msg.twist.linear.x
 
     def dbw_enabled_cb(self,msg):
-        rospy.logerr("dbw_enabled_cb")
         self.dbw_enabled = msg
         
     def twist_cb(self,msg):
