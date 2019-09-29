@@ -86,7 +86,7 @@ class WaypointUpdater(object):
     
     def publish_waypoints(self, closest_idx):
         
-        rospy.logerr("--- closest: %s: ",closest_idx)
+        #rospy.logerr("--- closest: %s: ",closest_idx)
         
         lane = Lane()
         lane.header = self.base_waypoints.header
