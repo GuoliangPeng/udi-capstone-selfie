@@ -75,11 +75,15 @@ class DBWNode(object):
         self.throttle       = 0
         self.brake          = 0
         self.steering       = 0
-        self.linear_vel     = 0
-        self.angular_vel    = 0
-        self.current_vel    = 0
+        #self.linear_vel     = 0
+        #self.angular_vel    = 0
+        #self.current_vel    = 0
         self.current_ang_vel= 0
         self.dbw_enabled    = 0
+        
+        self.current_vel    = None
+        self.linear_vel     = None
+        self.angular_vel    = None
         
         self.loop()
 
@@ -103,6 +107,8 @@ class DBWNode(object):
                                                                                    self.linear_vel,
                                                                                    self.angular_vel)
                 if self.dbw_enabled:
+                    #rospy.logerr("dwb publish:")
+                    #rospy.logerr("self.steering")
                     self.publish(self.throttle, self.brake, self.steering)
             rate.sleep()
 
@@ -127,7 +133,9 @@ class DBWNode(object):
         
 
     def velocity_cb(self,msg):
+        
         self.current_vel = msg.twist.linear.x
+        #rospy.logerr("twist_cb - vel: %s ",self.current_vel)
 
     def dbw_enabled_cb(self,msg):
         self.dbw_enabled = msg
@@ -135,7 +143,7 @@ class DBWNode(object):
     def twist_cb(self,msg):
         self.linear_vel = msg.twist.linear.x
         self.angular_vel =  msg.twist.angular.z
-     
+        
 
 if __name__ == '__main__':
     DBWNode()
