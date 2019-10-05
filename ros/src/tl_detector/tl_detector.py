@@ -131,17 +131,35 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        light = None
-
+        #light = None
+        closest_light = None
+        line_wp_idx = None
+        
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
+        
         if(self.pose):
-            car_position = self.get_closest_waypoint(self.pose.pose)
+            car_wp_idx = self.get_closest_waypoint(self.pose.pose)
 
-        #TODO find the closest visible traffic light (if one exists)
-
-        if light:
-            state = self.get_light_state(light)
+            #TODO find the closest visible traffic light (if one exists)
+            diff = len(self.waypoints.waypoints)
+            for i, light in enumerate(self.lights):
+                
+                line = stop_line_positions[i]
+                
+                x = line[0]
+                y = line[1]
+                temp_wp_idx = self.get_closest_waypoint(x,y)   
+                
+                d = temp_wp_idx - cap_wp_idx
+                
+                if d >= 0 and d < diff:
+                    diff = d
+                    closest_light = light
+                    linew_wp_idx = temp_wp_idx
+            
+        if closest_light:
+            state = self.get_light_state(closest_light)
             return light_wp, state
         self.waypoints = None
         return -1, TrafficLight.UNKNOWN
