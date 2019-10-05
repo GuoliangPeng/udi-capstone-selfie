@@ -17,6 +17,7 @@ class TLDetector(object):
     def __init__(self):
         rospy.init_node('tl_detector')
 
+        self.waypoint_tree = None
         self.pose = None
         self.waypoints = None
         self.camera_image = None
@@ -56,6 +57,13 @@ class TLDetector(object):
 
     def waypoints_cb(self, waypoints):
         self.waypoints = waypoints
+        
+        # make list of just xy positions of waypoint message
+        waypoints_2d = [[waypoint.pose.pose.position.x,waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
+        
+        # generate KD tree for those 2d coordinates
+        self.waypoint_tree = spatial.KDTree(waypoints_2d)   
+
 
     def traffic_cb(self, msg):
         self.lights = msg.lights
@@ -90,9 +98,10 @@ class TLDetector(object):
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
         self.state_count += 1
 
-    def get_closest_waypoint(self, pose):
+    def get_closest_waypoint(self,x,y):
+        
         """Identifies the closest path waypoint to the given position
-            https://en.wikipedia.org/wiki/Closest_pair_of_points_problem
+
         Args:
             pose (Pose): position to match a waypoint to
 
@@ -100,8 +109,13 @@ class TLDetector(object):
             int: index of the closest waypoint in self.waypoints
 
         """
-        #TODO implement
-        return 0
+    
+        if self.waypoint_tree == None:
+            rospy.logerr("error: get_closest_waypoint_idx - waypoint_tree (kdtree) not assigned")
+            return 0
+        else:
+            closest_idx = self.waypoint_tree.query([x,y],1)[1]
+            return closest_idx
 
     def get_light_state(self, light):
         """Determines the current color of the traffic light
@@ -141,7 +155,6 @@ class TLDetector(object):
         if(self.pose):
             car_wp_idx = self.get_closest_waypoint(self.pose.pose)
 
-            #TODO find the closest visible traffic light (if one exists)
             diff = len(self.waypoints.waypoints)
             for i, light in enumerate(self.lights):
                 
