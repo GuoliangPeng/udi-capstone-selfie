@@ -85,14 +85,14 @@ class DBWNode(object):
         
     def reset_all(self):
         
-        self.throttle       = 0.
-        self.brake          = 0.
-        self.steering       = 0.
-        self.linear_vel     = 0.
-        self.angular_vel    = 0.
-        self.current_vel    = 0.
-        self.current_ang_vel= 0.
-        self.dbw_enabled    = 0.
+        self.throttle        = None
+        self.brake           = None
+        self.steering        = None
+        self.linear_vel      = None
+        self.angular_vel     = None
+        self.current_vel     = None
+        self.current_ang_vel = None
+        self.dbw_enabled     = None
         
     def loop(self):
         rate = rospy.Rate(50)

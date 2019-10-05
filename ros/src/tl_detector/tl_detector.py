@@ -11,17 +11,21 @@ import tf
 import cv2
 import yaml
 
+from scipy import spatial
+
 STATE_COUNT_THRESHOLD = 3
 
 class TLDetector(object):
     def __init__(self):
+        
         rospy.init_node('tl_detector')
 
         self.waypoint_tree = None
+        self.has_image   = False
         self.pose = None
         self.waypoints = None
         self.camera_image = None
-        self.lights = []
+        self.lights =  []
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
