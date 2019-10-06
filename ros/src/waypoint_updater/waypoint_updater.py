@@ -135,10 +135,10 @@ class WaypointUpdater(object):
             rospy.logerr("self.waypoints_2d already assigned?: %s",self.waypoints_2d)
         
     def traffic_cb(self, msg):
-        self.stopline_idx = msg.data
+        self.stopline_idx = msg
         
     def obstacle_cb(self, msg):
-        self.obstacle_idx = msg.data
+        self.obstacle_idx = msg
        
     def get_waypoint_velocity(self, waypoint):
         return waypoint.twist.twist.linear.x
