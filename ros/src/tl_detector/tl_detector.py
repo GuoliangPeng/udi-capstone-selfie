@@ -18,6 +18,14 @@ STATE_COUNT_THRESHOLD = 3
 class TLDetector(object):
     def __init__(self):
         
+        '''
+        /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
+        helps you acquire an accurate ground truth data source for the traffic light
+        classifier by sending the current color state of all traffic lights in the
+        simulator. When testing on the vehicle, the color state will not be available. You'll need to
+        rely on the position of the light and the camera image to predict it.
+        '''
+
         rospy.init_node('tl_detector')
 
         self.waypoint_tree = None
@@ -26,19 +34,11 @@ class TLDetector(object):
         self.waypoints = None
         self.camera_image = None
         self.lights =  []
-
-        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-
-        '''
-        /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
-        helps you acquire an accurate ground truth data source for the traffic light
-        classifier by sending the current color state of all traffic lights in the
-        simulator. When testing on the vehicle, the color state will not be available. You'll need to
-        rely on the position of the light and the camera image to predict it.
-        '''
-        sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
-        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
+        
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
+        rospy.Subscriber('/image_color', Image, self.image_cb)
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
@@ -60,11 +60,13 @@ class TLDetector(object):
         self.pose = msg
 
     def waypoints_cb(self, waypoints):
+        
         self.waypoints = waypoints
         
         # make list of just xy positions of waypoint message
         waypoints_2d = [[waypoint.pose.pose.position.x,waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
         
+        rospy.logerr("waypoints_cp - assigning kd tree:")
         # generate KD tree for those 2d coordinates
         self.waypoint_tree = spatial.KDTree(waypoints_2d)   
 
@@ -145,14 +147,19 @@ class TLDetector(object):
 #         return self.light_classifier.get_classification(cv_image)
 
     def process_traffic_lights(self):
+        
         """Finds closest visible traffic light, if one exists, and determines its
             location and color
 
         Returns:
             int: index of waypoint closes to the upcoming stop line for a traffic light (-1 if none exists)
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
-
         """
+        
+        if self.waypoints == None:
+            rospy.logerr("process_traffic_lights: waypoints are none")
+            return -1, TrafficLight.UNKNOWN
+        
         #light = None
         closest_light = None
         line_wp_idx = None
