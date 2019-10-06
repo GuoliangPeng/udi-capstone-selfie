@@ -60,18 +60,37 @@ class TLDetector(object):
         self.pose = msg
 
     def waypoints_cb(self, waypoints):
+
+        rospy.logerr("tl detector: waypoints_cp")
+        
+        if self.waypoints:
+            rospy.logerr("waypoints already assigned - return")
+            return 
         
         self.waypoints = waypoints
+        
+        if self.waypoints == None:
+            rospy.logerr("waypoint are null")
+            return
+            
+        rospy.logerr("waypoint size: %s: ",len(self.waypoints.waypoints))
         
         # make list of just xy positions of waypoint message
         waypoints_2d = [[waypoint.pose.pose.position.x,waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
         
         rospy.logerr("waypoints_cp - assigning kd tree:")
         # generate KD tree for those 2d coordinates
-        self.waypoint_tree = spatial.KDTree(waypoints_2d)   
+        self.waypoint_tree = spatial.KDTree(waypoints_2d)  
+        
+        if self.waypoint_tree == None:
+            rospy.logerr("waypoint_tree none!?!")
+        else:    
+            rospy.logerr("waypoint_tree assigned!")
 
 
     def traffic_cb(self, msg):
+        
+        rospy.logerr("traffic_cb")
         self.lights = msg.lights
 
     def image_cb(self, msg):
@@ -82,9 +101,15 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
+        
+        rospy.logerr("image_cb")
+        
         self.has_image = True
         self.camera_image = msg
         light_wp, state = self.process_traffic_lights()
+        
+        rospy.logerr("state: %s",state)
+        rospy.logerr("wp: %s",light_wp)
 
         '''
         Publish upcoming red lights at camera frequency.
@@ -118,6 +143,10 @@ class TLDetector(object):
     
         if self.waypoint_tree == None:
             rospy.logerr("error: get_closest_waypoint_idx - waypoint_tree (kdtree) not assigned")
+            if self.waypoints == None:
+                rospy.logerr("waypoints also none")
+            else: 
+                rospy.logerr("waypoints are assigned")
             return 0
         else:
             closest_idx = self.waypoint_tree.query([x,y],1)[1]

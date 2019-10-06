@@ -113,6 +113,7 @@ class WaypointUpdater(object):
 
     def waypoints_cb(self, waypoints):
             
+        rospy.logerr("wp updater: waypoints_cp")    
         size = len(waypoints.waypoints)
      
         # make a copy as they are only sent once
@@ -126,14 +127,16 @@ class WaypointUpdater(object):
             rospy.logerr("self.waypoints_2d already assigned?: %s",self.waypoints_2d)
         
     def traffic_cb(self, msg):
-        #rospy.logerr("---------------------------traffic_cb got called")
+        rospy.logerr("---------------------------traffic_cb got called")
         # TODO: Callback for /traffic_waypoint message. Implement
+        pass
         
 
     def obstacle_cb(self, msg):
         
         rospy.logerr("---------------------------obstacle_cb got called")
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
+        pass
        
 
     def get_waypoint_velocity(self, waypoint):
