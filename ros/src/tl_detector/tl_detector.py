@@ -11,6 +11,10 @@ import tf
 import cv2
 import yaml
 
+import os
+import calendar
+import time
+
 from scipy import spatial
 
 STATE_COUNT_THRESHOLD = 3
@@ -53,6 +57,10 @@ class TLDetector(object):
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
+        
+        self.image_count = 0
+        
+        self.bridge = CvBridge()
 
         rospy.spin()
 
@@ -81,6 +89,26 @@ class TLDetector(object):
         #rospy.logerr("traffic_cb")
         self.lights = msg.lights
 
+    def light_label(self, state):
+        if state == TrafficLight.RED:
+            return "RED"
+        elif state == TrafficLight.YELLOW:
+            return "YELLOW"
+        elif state == TrafficLight.GREEN:
+            return "GREEN"
+        return "UNKNOWN"
+    
+    def create_training_data(self, state):
+        f_name = "sim_tl_{}_{}.jpg".format(calendar.timegm(time.gmtime()), self.light_label(state))
+        dir = './data/train/sim'
+
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image)
+        cv_image = cv_image[:, :, ::-1]
+        cv2.imwrite('{}/{}'.format(dir, f_name), cv_image)
+        
     def image_cb(self, msg):
         
         """Identifies red lights in the incoming camera image and publishes the index
@@ -91,12 +119,18 @@ class TLDetector(object):
 
         """
         
-        #rospy.logerr("image_cb")
+        # we dont need to handle every single image
+        self.image_count += 1
+        if self.image_count % 10 != 0:
+            return
+
         
         self.has_image = True
         self.camera_image = msg
-    
+          
         light_wp, state = self.process_traffic_lights()
+        
+        self.create_training_data(state)
         
 #         rospy.logerr("state: %s",state)
 #         rospy.logerr("wp: %s",light_wp)
