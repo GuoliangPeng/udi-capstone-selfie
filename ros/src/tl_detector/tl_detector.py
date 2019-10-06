@@ -61,8 +61,6 @@ class TLDetector(object):
 
     def waypoints_cb(self, waypoints):
 
-        rospy.logerr("tl detector: waypoints_cp")
-        
         if self.waypoints:
             rospy.logerr("waypoints already assigned - return")
             return 
@@ -72,28 +70,19 @@ class TLDetector(object):
         if self.waypoints == None:
             rospy.logerr("waypoint are null")
             return
-            
-        rospy.logerr("waypoint size: %s: ",len(self.waypoints.waypoints))
-        
+
         # make list of just xy positions of waypoint message
         waypoints_2d = [[waypoint.pose.pose.position.x,waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
-        
-        rospy.logerr("waypoints_cp - assigning kd tree:")
-        # generate KD tree for those 2d coordinates
         self.waypoint_tree = spatial.KDTree(waypoints_2d)  
-        
-        if self.waypoint_tree == None:
-            rospy.logerr("waypoint_tree none!?!")
-        else:    
-            rospy.logerr("waypoint_tree assigned!")
 
 
     def traffic_cb(self, msg):
         
-        rospy.logerr("traffic_cb")
+        #rospy.logerr("traffic_cb")
         self.lights = msg.lights
 
     def image_cb(self, msg):
+        
         """Identifies red lights in the incoming camera image and publishes the index
             of the waypoint closest to the red light's stop line to /traffic_waypoint
 
@@ -102,14 +91,15 @@ class TLDetector(object):
 
         """
         
-        rospy.logerr("image_cb")
+        #rospy.logerr("image_cb")
         
         self.has_image = True
         self.camera_image = msg
+    
         light_wp, state = self.process_traffic_lights()
         
-        rospy.logerr("state: %s",state)
-        rospy.logerr("wp: %s",light_wp)
+#         rospy.logerr("state: %s",state)
+#         rospy.logerr("wp: %s",light_wp)
 
         '''
         Publish upcoming red lights at camera frequency.
