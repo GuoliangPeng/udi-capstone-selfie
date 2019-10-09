@@ -62,11 +62,7 @@ class TLDetector(object):
 
         self.bridge = CvBridge()
         self.light_classifier = TLClassifier()
-        
-        if self.light_classifier.loaded == False:
-            rospy.logerr("--------------- not loaded! ------------")
-            
-        
+          
         self.listener = tf.TransformListener()
         
         rospy.spin()

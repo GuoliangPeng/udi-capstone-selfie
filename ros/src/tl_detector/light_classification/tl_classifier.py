@@ -8,7 +8,7 @@ import rospy
 class TLClassifier(object):
     def __init__(self):
         
-        self.loaded = False
+        
         self.dg = tf.Graph()
 
         pwd = os.path.dirname(os.path.realpath(__file__))
@@ -24,9 +24,7 @@ class TLClassifier(object):
             self.detection_boxes = self.dg.get_tensor_by_name('detection_boxes:0')
             self.detection_scores = self.dg.get_tensor_by_name('detection_scores:0')
             self.detection_classes = self.dg.get_tensor_by_name('detection_classes:0')
-            self.num_detections = self.dg.get_tensor_by_name('num_detections:0')
-            
-        self.loaded = True     
+            self.num_detections = self.dg.get_tensor_by_name('num_detections:0')  
 
     def get_boxes(self, image):
         with self.dg.as_default():
