@@ -42,18 +42,13 @@ class TLDetector(object):
         
         rospy.wait_for_message('/base_waypoints', Lane)
         rospy.wait_for_message('/current_pose', PoseStamped)
-       
         rospy.wait_for_message('/vehicle/traffic_lights', TrafficLightArray)
-
+        rospy.wait_for_message('/image_color', Image)
         
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-
         rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
-
-        rospy.wait_for_message('/image_color', Image)
-        rospy.Subscriber('/image_color', Image, self.image_cb)
+        rospy.Subscriber('/image_color', Image, self.image_cb, queue_size=1, buff_size=2**25)
 
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
@@ -62,7 +57,6 @@ class TLDetector(object):
 
         self.bridge = CvBridge()
         self.light_classifier = TLClassifier()
-          
         self.listener = tf.TransformListener()
         
         rospy.spin()
