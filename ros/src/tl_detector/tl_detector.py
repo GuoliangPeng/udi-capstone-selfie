@@ -35,9 +35,24 @@ class TLDetector(object):
         self.camera_image = None
         self.lights =  []
         
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        self.state = TrafficLight.UNKNOWN
+        self.last_state = TrafficLight.UNKNOWN
+        self.last_wp = -1
+        self.state_count = 0
+        
+        rospy.wait_for_message('/base_waypoints', Lane)
+        rospy.wait_for_message('/current_pose', PoseStamped)
+       
+        rospy.wait_for_message('/vehicle/traffic_lights', TrafficLightArray)
+
+        
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+
         rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
+
+        rospy.wait_for_message('/image_color', Image)
         rospy.Subscriber('/image_color', Image, self.image_cb)
 
         config_string = rospy.get_param("/traffic_light_config")
@@ -48,37 +63,31 @@ class TLDetector(object):
         self.bridge = CvBridge()
         self.light_classifier = TLClassifier()
         self.listener = tf.TransformListener()
-
-        self.state = TrafficLight.UNKNOWN
-        self.last_state = TrafficLight.UNKNOWN
-        self.last_wp = -1
-        self.state_count = 0
-
+        
         rospy.spin()
 
     def pose_cb(self, msg):
         self.pose = msg
 
     def waypoints_cb(self, waypoints):
-
-        if self.waypoints:
+        rospy.logerr("waypoints_cb")
+        if self.waypoint_tree:
             rospy.logerr("waypoints already assigned - return")
-            return 
-        
-        self.waypoints = waypoints
-        
-        if self.waypoints == None:
-            rospy.logerr("waypoint are null")
-            return
+        else:
+            self.waypoints = waypoints
+            waypoints_2d = [[waypoint.pose.pose.position.x,waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
+            self.waypoint_tree = spatial.KDTree(waypoints_2d)  
+#         if self.waypoints == None:
+#             rospy.logerr("waypoint are null")
+#             return
 
         # make list of just xy positions of waypoint message
-        waypoints_2d = [[waypoint.pose.pose.position.x,waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
-        self.waypoint_tree = spatial.KDTree(waypoints_2d)  
+
 
 
     def traffic_cb(self, msg):
         
-        #rospy.logerr("traffic_cb")
+        rospy.logerr("traffic_cb")
         self.lights = msg.lights
 
     def image_cb(self, msg):
@@ -91,15 +100,15 @@ class TLDetector(object):
 
         """
         
-        #rospy.logerr("image_cb")
+        rospy.logerr("image_cb")
         
         self.has_image = True
         self.camera_image = msg
     
         light_wp, state = self.process_traffic_lights()
         
-#         rospy.logerr("state: %s",state)
-#         rospy.logerr("wp: %s",light_wp)
+        rospy.logerr("state: %s",state)
+        rospy.logerr("wp: %s",light_wp)
 
         '''
         Publish upcoming red lights at camera frequency.
@@ -107,6 +116,7 @@ class TLDetector(object):
         of times till we start using it. Otherwise the previous stable state is
         used.
         '''
+        
         if self.state != state:
             self.state_count = 0
             self.state = state
@@ -153,17 +163,18 @@ class TLDetector(object):
 
         """
         # for testing only!!
-        return light.state
+#         return light.state
         
         # for releave version
 #         if(not self.has_image):
 #             self.prev_light_loc = None
 #             return False
 
-#         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image,"bgr8")
-
-#         #Get classification
-#         return self.light_classifier.get_classification(cv_image)
+        rospy.logerr("light")
+        cv_image = self.bridge.imgmsg_to_cv2(light,"bgr8")
+        rospy.logerr(cv_image.shape)
+        #Get classification
+        return self.light_classifier.get_classification(cv_image)
 
     def process_traffic_lights(self):
         
@@ -175,7 +186,7 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
         
-        if self.waypoints == None:
+        if self.waypoints is None:
             rospy.logerr("process_traffic_lights: waypoints are none")
             return -1, TrafficLight.UNKNOWN
         
@@ -192,26 +203,27 @@ class TLDetector(object):
             car_wp_idx = self.get_closest_waypoint(x,y)
 
             diff = len(self.waypoints.waypoints)
-            for i, light in enumerate(self.lights):
-                
-                line = stop_line_positions[i]
-                x = line[0]
-                y = line[1]
-        
-                temp_wp_idx = self.get_closest_waypoint(x,y)   
-                
-                d = temp_wp_idx - car_wp_idx
-                
-                if d >= 0 and d < diff:
-                    diff = d
-                    closest_light = light
-                    line_wp_idx = temp_wp_idx
+            if(not self.lights):
+                for i, light in enumerate(self.lights):
+
+                    line = stop_line_positions[i]
+                    x = line[0]
+                    y = line[1]
+
+                    temp_wp_idx = self.get_closest_waypoint(x,y)   
+
+                    d = temp_wp_idx - car_wp_idx
+
+                    if d >= 0 and d < diff:
+                        diff = d
+                        closest_light = light
+                        line_wp_idx = temp_wp_idx
             
         if closest_light:
             #rospy.logerr("closest light:")
             state = self.get_light_state(closest_light)
             return line_wp_idx, state
-        self.waypoints = None
+
         return -1, TrafficLight.UNKNOWN
 
 if __name__ == '__main__':
