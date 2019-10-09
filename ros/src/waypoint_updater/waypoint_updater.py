@@ -23,8 +23,9 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 100 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 75 # Number of waypoints we will publish. You can change this number
 MAX_DECEL = 1.0
+LOOP_RATE = 5
 
 class WaypointUpdater(object):
     def __init__(self):
@@ -32,12 +33,13 @@ class WaypointUpdater(object):
         #rospy.init_node('waypoint_updater',log_level=rospy.DEBUG)
         rospy.init_node('waypoint_updater')
 
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb, queue_size=10)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         
         # these recieve only a waypoint index that refers back to the self.base_waypoints list
-        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
-        rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_cb)
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb, queue_size=10)
+        
+        #rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_cb)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
@@ -59,7 +61,7 @@ class WaypointUpdater(object):
     
     def loop(self):
         
-        rate = rospy.Rate(50)
+        rate = rospy.Rate(LOOP_RATE)
         while not rospy.is_shutdown():
             if self.pose and self.base_waypoints and self.waypoint_tree:
                 closest_waypoint_idx = self.get_closest_waypoint_idx()
