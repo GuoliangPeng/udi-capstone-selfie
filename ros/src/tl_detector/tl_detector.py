@@ -40,7 +40,7 @@ class TLDetector(object):
         self.last_wp = -1
         self.state_count = 0
         
-        self.debug = True
+        self.debug = False
         
         rospy.wait_for_message('/base_waypoints', Lane)
         rospy.wait_for_message('/current_pose', PoseStamped)
