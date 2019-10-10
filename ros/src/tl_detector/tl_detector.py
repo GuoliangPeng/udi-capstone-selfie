@@ -42,10 +42,11 @@ class TLDetector(object):
         
         self.debug = False
         
-        rospy.wait_for_message('/base_waypoints', Lane)
-        rospy.wait_for_message('/current_pose', PoseStamped)
-        rospy.wait_for_message('/vehicle/traffic_lights', TrafficLightArray)
-        rospy.wait_for_message('/image_color', Image)
+        # not sure this usage is correct - so leave this out for now
+#         rospy.wait_for_message('/base_waypoints', Lane)
+#         rospy.wait_for_message('/current_pose', PoseStamped)
+#         rospy.wait_for_message('/vehicle/traffic_lights', TrafficLightArray)
+#         rospy.wait_for_message('/image_color', Image)
         
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
@@ -90,7 +91,12 @@ class TLDetector(object):
 
         """
         
-        rospy.logerr("image_cb")
+        #rospy.logerr("image_cb")
+        
+        if self.waypoints == None or self.waypoint_tree == None:
+            self.has_image = False
+            self.camera_image = None
+            return
         
         self.has_image = True
         self.camera_image = msg
@@ -131,18 +137,14 @@ class TLDetector(object):
 
         """
     
-        if self.waypoint_tree == None:
+        if self.waypoint_tree is None:
             rospy.logerr("error: get_closest_waypoint_idx - waypoint_tree (kdtree) not assigned")
-            if self.waypoints == None:
-                rospy.logerr("waypoints also none")
-            else: 
-                rospy.logerr("waypoints are assigned")
-            return 0
         else:
             closest_idx = self.waypoint_tree.query([x,y],1)[1]
             return closest_idx
 
     def get_light_state(self, light):
+        
         """Determines the current color of the traffic light
 
         Args:
@@ -158,13 +160,15 @@ class TLDetector(object):
         
         else:
             
-            if(not self.has_image):
+            if self.has_image is False or self.camera_image is None:
                 self.prev_light_loc = None
-                return False
+                return TrafficLight.UNKNOWN
+            
+            if self.light_classifier is None:
+                return TrafficLight.UNKNOWN
 
+            # use computer vision to detect traffic light and it's state
             cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
-
-            #Get classification
             return self.light_classifier.get_classification(cv_image)
 
     def process_traffic_lights(self):
@@ -177,7 +181,7 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
         
-        if self.waypoints is None:
+        if (self.waypoints is None) or (self.waypoint_tree is None):
             rospy.logerr("process_traffic_lights: no waypointa")
             return -1, TrafficLight.UNKNOWN
         
@@ -210,7 +214,7 @@ class TLDetector(object):
                         closest_light = light
                         line_wp_idx = temp_wp_idx
             
-        if closest_light:
+        if closest_light != None:
             #rospy.logerr("closest light:")
             state = self.get_light_state(closest_light)
             return line_wp_idx, state
