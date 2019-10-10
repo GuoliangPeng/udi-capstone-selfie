@@ -33,16 +33,6 @@ class WaypointUpdater(object):
         #rospy.init_node('waypoint_updater',log_level=rospy.DEBUG)
         rospy.init_node('waypoint_updater')
 
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb, queue_size=10)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-        
-        # these recieve only a waypoint index that refers back to the self.base_waypoints list
-        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb, queue_size=10)
-        
-        #rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_cb)
-
-        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
         # TODO: Add other member variables you need below
@@ -56,6 +46,16 @@ class WaypointUpdater(object):
         self.obstacle_idx = -1
         
         self.stop_buffer  = 2
+
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb, queue_size=10)
+        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        
+        # these recieve only a waypoint index that refers back to the self.base_waypoints list
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb, queue_size=10)
+        
+        #rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_cb)
+
+        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
         self.loop()
     

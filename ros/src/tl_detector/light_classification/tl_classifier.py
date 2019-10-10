@@ -54,7 +54,7 @@ class TLClassifier(object):
                     box_h, box_w = (box[2] - box[0], box[3] - box[1])
                     if box_h / box_w < 1.6:
                         continue
-                    print('detected bounding box: {} conf: {}'.format(box, detection_scores[idx]))
+                    #print('detected bounding box: {} conf: {}'.format(box, detection_scores[idx]))
                     ret.append(box)
         return ret
 
@@ -70,7 +70,7 @@ class TLClassifier(object):
         """
 
         boxes = self.get_boxes(image)
-        rospy.logerr("got image")
+        #rospy.logerr("got image")
         img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     
         if boxes is None:
