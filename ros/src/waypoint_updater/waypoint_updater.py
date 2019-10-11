@@ -35,8 +35,6 @@ class WaypointUpdater(object):
 
         self.final_waypoints_pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
 
-        # TODO: Add other member variables you need below
-        
         self.base_waypoints = None
         self.waypoints_2d   = None
         self.waypoint_tree  = None
@@ -44,18 +42,16 @@ class WaypointUpdater(object):
         
         self.stopline_idx = -1
         self.obstacle_idx = -1
-        
         self.stop_buffer  = 2
 
+        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)   
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb, queue_size=10)
-        rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         
         # these recieve only a waypoint index that refers back to the self.base_waypoints list
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb, queue_size=10)
         
+        # optional: 
         #rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_cb)
-
-        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
         self.loop()
     
@@ -65,6 +61,7 @@ class WaypointUpdater(object):
         while not rospy.is_shutdown():
             if self.pose and self.base_waypoints and self.waypoint_tree:
                 closest_waypoint_idx = self.get_closest_waypoint_idx()
+                rospy.logerr("cwp %s",closest_waypoint_idx)
                 self.publish_waypoints(closest_waypoint_idx)
             rate.sleep()    
 
@@ -115,12 +112,9 @@ class WaypointUpdater(object):
         
         self.final_waypoints_pub.publish(lane)
         
-    def pose_cb(self, msg):
-        
-        rospy.loginfo("pose_cb: enter")
+    def pose_cb(self, msg):        
         self.pose = msg
-        rospy.loginfo("pose_cb: done")
-
+        
     def waypoints_cb(self, waypoints):
             
         #rospy.logerr("wp updater: waypoints_cp")    

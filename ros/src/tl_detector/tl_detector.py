@@ -108,8 +108,8 @@ class TLDetector(object):
     
         light_wp, state = self.process_traffic_lights()
         
-        rospy.logerr("state: %s",state)
-        rospy.logerr("wp: %s",light_wp)
+#         rospy.logerr("state: %s",state)
+#         rospy.logerr("wp: %s",light_wp)
 
         '''
         Publish upcoming red lights at camera frequency.
