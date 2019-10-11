@@ -103,13 +103,15 @@ class WaypointUpdater(object):
             rospy.logerr("error: self.base_waypoints.waypoints== none!")
             return
 
-                        
-        if self.stopline_idx != -1 and self.stopline_idx < len(self.base_waypoints.waypoints):
-            lane.waypoints = self.decelerate_waypoints(closest_idx)    
-        else:   
-            lane.waypoints = self.base_waypoints.waypoints[closest_idx:closest_idx+LOOKAHEAD_WPS]
-        
-        
+        size = len(self.base_waypoints.waypoints)
+        sl_idx = self.stopline_idx
+
+        lane.waypoints = self.base_waypoints.waypoints[closest_idx:closest_idx+LOOKAHEAD_WPS]
+          
+        if sl_idx >= 0 and sl_idx < size:
+            #rospy.logerr("decelerate waypoint")
+            lane.waypoints = self.decelerate_waypoints(closest_idx,lane.waypoints)    
+   
         self.final_waypoints_pub.publish(lane)
         
     def pose_cb(self, msg):        
@@ -131,10 +133,11 @@ class WaypointUpdater(object):
             rospy.logerr("self.waypoints_2d already assigned?: %s",self.waypoints_2d)
         
     def traffic_cb(self, msg):
-        self.stopline_idx = msg
+        self.stopline_idx = msg.data
+        #rospy.logerr("waypoint_updater: way point index %s ",self.stopline_idx)
         
-    def obstacle_cb(self, msg):
-        self.obstacle_idx = msg
+    # def obstacle_cb(self, msg):
+    #     self.obstacle_idx = msg
        
     def get_waypoint_velocity(self, waypoint):
         return waypoint.twist.twist.linear.x
@@ -150,10 +153,11 @@ class WaypointUpdater(object):
             wp1 = i
         return dist
 
-    def decelerate_waypoints(self,closest_idx):
-        wp_out = []
+    def decelerate_waypoints(self,closest_idx,wp_in):
         
-        for i, wp in enumerate(self.base_waypoints.waypoints):
+        wp_out = []
+
+        for i, wp in enumerate(wp_in):
             
             p = Waypoint()
             p.pose = wp.pose
