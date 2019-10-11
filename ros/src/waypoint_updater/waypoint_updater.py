@@ -33,7 +33,7 @@ class WaypointUpdater(object):
         #rospy.init_node('waypoint_updater',log_level=rospy.DEBUG)
         rospy.init_node('waypoint_updater')
 
-        self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
+        self.final_waypoints_pub = rospy.Publisher('/final_waypoints', Lane, queue_size=1)
 
         # TODO: Add other member variables you need below
         
