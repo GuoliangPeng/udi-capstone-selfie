@@ -28,7 +28,7 @@ class TLClassifier(object):
 
     def get_box(self, image):
         with self.dg.as_default():
-            #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
             tf_image_input = np.expand_dims(image, axis=0)
 
@@ -58,7 +58,7 @@ class TLClassifier(object):
                     #print('detected bounding box: {} conf: {}'.format(box, detection_scores[idx]))
                     ret.append(box)
                     ret_scores.append(detection_scores[idx])
-	            print(detection_scores[idx])
+	            #print(detection_scores[idx])
         return ret[np.argmax(ret_scores)] if ret else ret
 
     def get_classification(self, image):
@@ -74,40 +74,37 @@ class TLClassifier(object):
 
         box = self.get_box(image)
         #rospy.logerr("got image")
-        #img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        img = image    
+        img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         if not box:
             #rospy.logerr("Couldn't locate lights")
             return TrafficLight.UNKNOWN
         i = 0
         class_image = cv2.resize(img[box[0]:box[2], box[1]:box[3]], (32, 32))
-            # The green needs to be checked first since red appears in many other components
-            # For example traffice signs / other colors
-        ret_green, thresh_green = cv2.threshold(class_image[:, :, 1], 170, 255, cv2.THRESH_BINARY)
-        green_count = cv2.countNonZero(thresh_green)
-        print('green_count', green_count)
-        box_h, box_w = (box[2] - box[0], box[3] - box[1])
-        img_size = 32 * 32
-        print('img_size', 32 * 32)
+	img_hsv=cv2.cvtColor(class_image, cv2.COLOR_RGB2HSV)
 
-        ret_red, thresh_red = cv2.threshold(class_image[:, :, 0], 170, 255, cv2.THRESH_BINARY)
-        red_count = cv2.countNonZero(thresh_red)
-        print('red_count', red_count)
-        #if green_count < 0.1 * img_size and red_count < 0.1 * img_size:
-        #    rospy.logerr('YELLOW')
-        #    return TrafficLight.YELLOW
-        #else:
+	lower_red = np.array([0,50,50])
+	upper_red = np.array([10,255,255])
+	mask0 = cv2.inRange(img_hsv, lower_red, upper_red)
+
+	lower_red = np.array([160,50,50])
+	upper_red = np.array([180,255,255])
+	mask1 = cv2.inRange(img_hsv, lower_red, upper_red)
+	
+	mask = mask0+mask1
+
+	output_img = class_image.copy()
+	output_img[np.where(mask==0)] = 0
+	
+	mask2 = cv2.inRange(img_hsv, (36, 25, 25), (70, 255,255))
+	output_img2 = class_image.copy()
+	output_img2[np.where(mask2==0)] = 0
+	
+	red_count = cv2.countNonZero(output_img[:, :, 0])    
+	green_count = cv2.countNonZero(output_img2[:, :, 1])    
+        #print('red_count', red_count, 'green_count', green_count)
         if red_count > green_count:
             rospy.logerr('RED')
             return TrafficLight.RED
         else:
             rospy.logerr('GREEN')
             return TrafficLight.GREEN
-                
-            
-   
- 
-
-
-
-
