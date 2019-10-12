@@ -103,8 +103,8 @@ class TLClassifier(object):
 	green_count = cv2.countNonZero(output_img2[:, :, 1])    
         #print('red_count', red_count, 'green_count', green_count)
         if red_count > green_count:
-            rospy.logerr('RED')
+            rospy.loginfo('RED')
             return TrafficLight.RED
         else:
-            rospy.logerr('GREEN')
+            rospy.loginfo('GREEN')
             return TrafficLight.GREEN

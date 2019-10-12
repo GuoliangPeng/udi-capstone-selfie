@@ -75,8 +75,6 @@ class TLDetector(object):
 
     def waypoints_cb(self, waypoints):
         
-        rospy.logerr("waypoints_cb")
-        
         if self.waypoint_tree:
             rospy.logerr("waypoints already assigned - return")
         else:
@@ -96,9 +94,7 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
-        
-        #rospy.logerr("image_cb")
-        
+
         if self.waypoints == None or self.waypoint_tree == None:
             self.has_image = False
             self.camera_image = None
