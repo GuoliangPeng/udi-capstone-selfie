@@ -26,9 +26,9 @@ class TLClassifier(object):
             self.detection_classes = self.dg.get_tensor_by_name('detection_classes:0')
             self.num_detections = self.dg.get_tensor_by_name('num_detections:0')  
 
-    def get_boxes(self, image):
+    def get_box(self, image):
         with self.dg.as_default():
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
             tf_image_input = np.expand_dims(image, axis=0)
 
@@ -41,6 +41,7 @@ class TLClassifier(object):
             detection_scores = np.squeeze(detection_scores)
 
             ret = []
+            ret_scores = []
             detection_threshold = 0.3
 
             # Traffic signals are labelled 10 in COCO
@@ -52,11 +53,12 @@ class TLClassifier(object):
                     box = detection_boxes[idx]
                     box = [int(box[0] * dim[0]), int(box[1] * dim[1]), int(box[2] * dim[0]), int(box[3] * dim[1])]
                     box_h, box_w = (box[2] - box[0], box[3] - box[1])
-                    if box_h / box_w < 1.6:
-                        continue
+                    #if box_h / box_w < 1.6:
+                    #    continue
                     #print('detected bounding box: {} conf: {}'.format(box, detection_scores[idx]))
                     ret.append(box)
-        return ret
+                    ret_scores.append(detection_scores[idx])
+        return ret[np.argmax(ret_scores)] if ret else ret
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
@@ -69,27 +71,42 @@ class TLClassifier(object):
 
         """
 
-        boxes = self.get_boxes(image)
+        box = self.get_box(image)
         #rospy.logerr("got image")
-        img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    
-        if boxes is None:
-            rospy.logerr("Couldn't locate lights")
+        #img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        img = image    
+        if not box:
+            #rospy.logerr("Couldn't locate lights")
             return TrafficLight.UNKNOWN
         i = 0
-        for box in boxes:
-            class_image = cv2.resize(img[box[0]:box[2], box[1]:box[3]], (32, 32))
+        class_image = img[box[0]:box[2], box[1]:box[3]]
             # The green needs to be checked first since red appears in many other components
             # For example traffice signs / other colors
-            ret, thresh = cv2.threshold(class_image[:, :, 2], 160, 255, cv2.THRESH_BINARY)
-            count = cv2.countNonZero(thresh)
-            if count > 100:
-                return TrafficLight.GREEN
+        ret, thresh = cv2.threshold(class_image[:, :, 1], 150, 255, cv2.THRESH_BINARY)
+        green_count = cv2.countNonZero(thresh)
+        print('green_count', green_count)
+        box_h, box_w = (box[2] - box[0], box[3] - box[1])
+        img_size = box_w * box_h
+        print('img_size', box_w * box_h)
+
+        ret, thresh = cv2.threshold(class_image[:, :, 0], 150, 255, cv2.THRESH_BINARY)
+        red_count = cv2.countNonZero(thresh)
+        print('red_count', red_count)
+        if green_count < 0.1 * img_size and red_count < 0.1 * img_size:
+            rospy.logerr('YELLOW')
+            return TrafficLight.YELLOW
+        else:
+            if red_count > green_count:
+                rospy.logerr('RED')
+                return TrafficLight.RED
             else:
-                ret, thresh = cv2.threshold(class_image[:, :, 0], 160, 255, cv2.THRESH_BINARY)
-                count = cv2.countNonZero(thresh)
-                if count > 100:
-                    rospy.logerr('RED')
-                    return TrafficLight.RED
-                else:
-                    return TrafficLight.YELLOW
+                rospy.logerr('GREEN')
+                return TrafficLight.GREEN
+                
+            
+   
+ 
+
+
+
+
