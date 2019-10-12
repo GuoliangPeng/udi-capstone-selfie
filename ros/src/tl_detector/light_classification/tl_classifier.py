@@ -42,7 +42,7 @@ class TLClassifier(object):
 
             ret = []
             ret_scores = []
-            detection_threshold = 0.3
+            detection_threshold = 0.2
 
             # Traffic signals are labelled 10 in COCO
             for idx, cl in enumerate(detection_classes.tolist()):
@@ -53,11 +53,12 @@ class TLClassifier(object):
                     box = detection_boxes[idx]
                     box = [int(box[0] * dim[0]), int(box[1] * dim[1]), int(box[2] * dim[0]), int(box[3] * dim[1])]
                     box_h, box_w = (box[2] - box[0], box[3] - box[1])
-                    #if box_h / box_w < 1.6:
-                    #    continue
+                    if box_h / box_w < 1.6:
+                        continue
                     #print('detected bounding box: {} conf: {}'.format(box, detection_scores[idx]))
                     ret.append(box)
                     ret_scores.append(detection_scores[idx])
+	            print(detection_scores[idx])
         return ret[np.argmax(ret_scores)] if ret else ret
 
     def get_classification(self, image):
@@ -79,29 +80,29 @@ class TLClassifier(object):
             #rospy.logerr("Couldn't locate lights")
             return TrafficLight.UNKNOWN
         i = 0
-        class_image = img[box[0]:box[2], box[1]:box[3]]
+        class_image = cv2.resize(img[box[0]:box[2], box[1]:box[3]], (32, 32))
             # The green needs to be checked first since red appears in many other components
             # For example traffice signs / other colors
-        ret, thresh = cv2.threshold(class_image[:, :, 1], 150, 255, cv2.THRESH_BINARY)
-        green_count = cv2.countNonZero(thresh)
+        ret_green, thresh_green = cv2.threshold(class_image[:, :, 1], 170, 255, cv2.THRESH_BINARY)
+        green_count = cv2.countNonZero(thresh_green)
         print('green_count', green_count)
         box_h, box_w = (box[2] - box[0], box[3] - box[1])
-        img_size = box_w * box_h
-        print('img_size', box_w * box_h)
+        img_size = 32 * 32
+        print('img_size', 32 * 32)
 
-        ret, thresh = cv2.threshold(class_image[:, :, 0], 150, 255, cv2.THRESH_BINARY)
-        red_count = cv2.countNonZero(thresh)
+        ret_red, thresh_red = cv2.threshold(class_image[:, :, 0], 170, 255, cv2.THRESH_BINARY)
+        red_count = cv2.countNonZero(thresh_red)
         print('red_count', red_count)
-        if green_count < 0.1 * img_size and red_count < 0.1 * img_size:
-            rospy.logerr('YELLOW')
-            return TrafficLight.YELLOW
+        #if green_count < 0.1 * img_size and red_count < 0.1 * img_size:
+        #    rospy.logerr('YELLOW')
+        #    return TrafficLight.YELLOW
+        #else:
+        if red_count > green_count:
+            rospy.logerr('RED')
+            return TrafficLight.RED
         else:
-            if red_count > green_count:
-                rospy.logerr('RED')
-                return TrafficLight.RED
-            else:
-                rospy.logerr('GREEN')
-                return TrafficLight.GREEN
+            rospy.logerr('GREEN')
+            return TrafficLight.GREEN
                 
             
    

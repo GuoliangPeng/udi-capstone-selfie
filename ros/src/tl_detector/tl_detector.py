@@ -40,7 +40,7 @@ class TLDetector(object):
         self.last_wp = -1
         self.state_count = 0
         
-        self.debug = True
+        self.debug = False
 
         self.bridge = CvBridge()
         self.light_classifier = TLClassifier()
