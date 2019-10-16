@@ -1,4 +1,10 @@
 # Capstone Project
+Team members:
+* gl.peng@outlook.com
+* morishuz@gmail.com
+* nikhil.nakhate@gmail.com
+* aakarshgupta97@gmail.com
+* mehrdad.salari@gmx.de
 
 ### Installation & Deployment
 
